@@ -1,41 +1,36 @@
-var derivedIndices = require('users/biplovbhandari/Rice_Mapping_Bhutan:indices.js');
+var indices = require('users/biplovbhandari/Rice_Mapping_Bhutan:indices.js');
 var tasseledCap_indices = require('users/biplovbhandari/Rice_Mapping_Bhutan:TCAP_Optical_Export.js');
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-function getIndices(listofDates, IC, ROI, type) {
+function getIndices(listofDates, imageCollection, ROI, type) {
   
   if (type == 'landsat') {
-    var l8Indices = listofDates.map(function (ld) {
-      var icL8 = ee.ImageCollection(IC.filterDate(ee.Dictionary(ld).get('startDate'), ee.Dictionary(ld).get('endDate')));
-      return derivedIndices.opticalIndicesLandsat(icL8);
+    return listofDates.map(function (ld) {
+      var ic = ee.ImageCollection(imageCollection.filterDate(ee.Dictionary(ld).get('startDate'), ee.Dictionary(ld).get('endDate')));
+      return indices.calculateL7L8Indices(ic);
     });
-    return l8Indices;
   } else if (type == 'sentinel2') {
-    var s2Indices = listofDates.map(function (ld) {
-      var ic2 = ee.ImageCollection(IC.filterDate(ee.Dictionary(ld).get('startDate'), ee.Dictionary(ld).get('endDate')));
-      return derivedIndices.opticalIndicesS2(ic2);
+    return listofDates.map(function (ld) {
+      var ic = ee.ImageCollection(imageCollection.filterDate(ee.Dictionary(ld).get('startDate'), ee.Dictionary(ld).get('endDate')));
+      return indices.calculateS2Indices(ic);
     });
-    return s2Indices; 
   } else if (type == 'tc') {
-    var tcIndices = listofDates.map(function (ld) {
-      var ic2 = ee.ImageCollection(IC.filterDate(ee.Dictionary(ld).get('startDate'), ee.Dictionary(ld).get('endDate')));
-      return derivedIndices.opticalIndicesS2tasseledCap_indices.calculateTasseledCap(ic2, ROI);
+    return listofDates.map(function (ld) {
+      var ic = ee.ImageCollection(imageCollection.filterDate(ee.Dictionary(ld).get('startDate'), ee.Dictionary(ld).get('endDate')));
+      return indices.calculateL8ToaTasseledCapIndices(ic, ROI);
     });
-    return tcIndices; 
   } else if (type == 'sentinel1') {
-    var s1Final = listofDates.map(function (ld) {
-      var ic2 = ee.ImageCollection(IC.filterDate(ee.Dictionary(ld).get('startDate'), ee.Dictionary(ld).get('endDate')));
-      return derivedIndices.radarIndicesS1(ic2);
+    return listofDates.map(function (ld) {
+      var ic = ee.ImageCollection(imageCollection.filterDate(ee.Dictionary(ld).get('startDate'), ee.Dictionary(ld).get('endDate')));
+      return indices.calculateS1Indices(ic);
     });
-    return s1Final;
   } else if (type == 'combinedLandsat') {
-    var indices = IC.map(function (image) {
-      return derivedIndices.opticalIndicesLandsat(image);
+    return imageCollection.map(function (image) {
+      return indices.calculateL7L8Indices(image);
     });
-    return indices;
   }
 }
 

@@ -7,9 +7,9 @@ var routine = require("users/biplovbhandari/Rice_Mapping_Bhutan:routine.js");
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // not recommended
-function _opticalIndicesLandsat(ImageCollection, ROI) {
+function _calculateL7L8Indices (imageCollection, ROI) {
   
-  return ImageCollection.map(function (image) {
+  return imageCollection.map(function (image) {
   
     var NDVI = image.normalizedDifference(['nir', 'red']).rename('NDVI');
     NDVI = ee.Image(NDVI.copyProperties(image)).set('system:time_start', image.get('system:time_start')).clip(ROI);
@@ -39,19 +39,19 @@ function _opticalIndicesLandsat(ImageCollection, ROI) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-function opticalIndicesLandsat(ImageCollection) {
+function calculateL7L8Indices (imageCollection) {
 
   var image = ee.Image(ee.Algorithms.If(
-    ee.Algorithms.ObjectType(ImageCollection).equals('Image'),
-    ee.Image(ImageCollection),
-    ee.ImageCollection(ImageCollection).median())
+    ee.Algorithms.ObjectType(imageCollection).equals('Image'),
+    ee.Image(imageCollection),
+    ee.ImageCollection(imageCollection).median())
   );
 
   var NDVI = image.normalizedDifference(['nir', 'red']).rename('NDVI');
   
   var NDWI = image.normalizedDifference(['green', 'nir']).rename('NDWI');
 
-  var MNDWI = image.normalizedDifference(["green","swir1"]).rename('MNDWI');
+  var MNDWI = image.normalizedDifference(['green', 'swir1']).rename('MNDWI');
   
   var SAVI = image.expression('((NIR - RED) / (NIR + RED + 0.5))*(1.5)', {
                                   'NIR': image.select('nir'),
@@ -68,51 +68,46 @@ function opticalIndicesLandsat(ImageCollection) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// function tasseledCapIndices(imageCollection) {
+function calculateL8ToaTasseledCapIndices(imageCollection) {
 
-//   imageCollection = imageCollection.map(routine.);
+  // this does not work.
+  // imageCollection = imageCollection.map(routine.maskL8ToaClouds);
+  imageCollection = imageCollection.map(routine.maskL7L8);
 
-//   var image = imageCollection.median();
+  var image = imageCollection.median();
 
-//   var tasseled_cap = ImageCollection.map(maskClouds).map(function(image) { 
-//     var b = image.select("B2", "B3", "B4", "B5", "B6", "B7");
-//     //Coefficients are only for Landsat 8 TOA
-//     var brightness_coefficents= ee.Image([0.3029, 0.2786, 0.4733, 0.5599, 0.508, 0.1872])
-//     var greenness_coefficents= ee.Image([-0.2941, -0.243, -0.5424, 0.7276, 0.0713, -0.1608]);
-//     var wetness_coefficents= ee.Image([0.1511, 0.1973, 0.3283, 0.3407, -0.7117, -0.4559]);
-//     var fourth_coefficents= ee.Image([-0.8239, 0.0849, 0.4396, -0.058, 0.2013, -0.2773]);
-//     var fifth_coefficents= ee.Image([-0.3294, 0.0557, 0.1056, 0.1855, -0.4349, 0.8085]);
-//     var sixth_coefficents= ee.Image([0.1079, -0.9023, 0.4119, 0.0575, -0.0259, 0.0252]);
+  var bands = image.select('blue', 'green', 'red', 'nir', 'swir1', 'swir2');
+  //Coefficients are only for Landsat 8 TOA
+  var brightness_coefficents= ee.Image([0.3029, 0.2786, 0.4733, 0.5599, 0.508, 0.1872]);
+  var greenness_coefficents= ee.Image([-0.2941, -0.243, -0.5424, 0.7276, 0.0713, -0.1608]);
+  var wetness_coefficents= ee.Image([0.1511, 0.1973, 0.3283, 0.3407, -0.7117, -0.4559]);
+  var fourth_coefficents= ee.Image([-0.8239, 0.0849, 0.4396, -0.058, 0.2013, -0.2773]);
+  var fifth_coefficents= ee.Image([-0.3294, 0.0557, 0.1056, 0.1855, -0.4349, 0.8085]);
+  var sixth_coefficents= ee.Image([0.1079, -0.9023, 0.4119, 0.0575, -0.0259, 0.0252]);
+
+  var brightness = image.expression('(bands * BRIGHTNESS)',{'bands': bands, 'BRIGHTNESS': brightness_coefficents});
+  var greenness = image.expression('(bands * GREENNESS)',{'bands': bands,'GREENNESS': greenness_coefficents});
+  var wetness = image.expression('(bands * WETNESS)', {'bands': bands,'WETNESS': wetness_coefficents});
+  var fourth = image.expression('(bands * FOURTH)', {'bands': bands,'FOURTH': fourth_coefficents});
+  var fifth = image.expression( '(bands * FIFTH)', {'bands': bands,'FIFTH': fifth_coefficents });
+  var sixth = image.expression('(bands * SIXTH)', {'bands': bands,'SIXTH': sixth_coefficents });
   
-//     var brightness = image.expression('(B * BRIGHTNESS)',{'B':b, 'BRIGHTNESS': brightness_coefficents});
-//     var greenness = image.expression('(B * GREENNESS)',{'B':b,'GREENNESS': greenness_coefficents});
-//     var wetness = image.expression('(B * WETNESS)', {'B':b,'WETNESS': wetness_coefficents});
-//     var fourth = image.expression('(B * FOURTH)', {'B':b,'FOURTH': fourth_coefficents});
-//     var fifth = image.expression( '(B * FIFTH)', {'B':b,'FIFTH': fifth_coefficents });
-//     var sixth = image.expression('(B * SIXTH)', {'B':b,'SIXTH': sixth_coefficents });
-    
-//     brightness = brightness.reduce(ee.call("Reducer.sum"));
-//     greenness = greenness.reduce(ee.call("Reducer.sum"));
-//     wetness = wetness.reduce(ee.call("Reducer.sum"));
-//     fourth = fourth.reduce(ee.call("Reducer.sum"));
-//     fifth = fifth.reduce(ee.call("Reducer.sum"));
-//     sixth = sixth.reduce(ee.call("Reducer.sum"));
-//     return ee.Image(brightness).addBands(greenness)
-//                               .addBands(wetness)
-//                               .addBands(fourth)
-//                               .addBands(fifth)
-//                               .addBands(sixth)
-//                               .rename('brightness','greenness','wetness','fourth','fifth','sixth').clip(ROI);
-//   });
-//   return tasseled_cap.median();
-// }
+  brightness = brightness.reduce(ee.call('Reducer.sum'));
+  greenness = greenness.reduce(ee.call('Reducer.sum'));
+  wetness = wetness.reduce(ee.call('Reducer.sum'));
+  fourth = fourth.reduce(ee.call('Reducer.sum'));
+  fifth = fifth.reduce(ee.call('Reducer.sum'));
+  sixth = sixth.reduce(ee.call('Reducer.sum'));
+  return ee.Image(brightness).addBands([greenness, wetness, fourth, fifth, sixth])
+                             .rename(['brightness','greenness','wetness','fourth','fifth','sixth']);
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // not recommended
-function _opticalIndicesS2(ImageCollection, ROI){
+function _calculateS2Indices(ImageCollection, ROI){
 
   function maskS2clouds(image) {
     var qa = image.select('QA60');
@@ -167,7 +162,7 @@ function _opticalIndicesS2(ImageCollection, ROI){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-function opticalIndicesS2(ImageCollection){
+function calculateS2Indices(ImageCollection){
 
   function maskS2clouds(image) {
     var qa = image.select('QA60');
@@ -210,7 +205,7 @@ function opticalIndicesS2(ImageCollection){
 
 // mosaic unknown area
 // not recommended
-function _radarIndicesS1(ImageCollection, ROI) {
+function _calculateS1Indices (ImageCollection, ROI) {
 
   var vvMosaic = ImageCollection.select('VV').mosaic();
   var VV = ImageCollection.select('VV').median().unmask(vvMosaic);
@@ -239,7 +234,7 @@ function _radarIndicesS1(ImageCollection, ROI) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-function radarIndicesS1(ImageCollection) {
+function calculateS1Indices(ImageCollection) {
 
   var VV = ImageCollection.select('VV').median();
   var VH = ImageCollection.select('VH').median();
@@ -252,6 +247,7 @@ function radarIndicesS1(ImageCollection) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-exports.opticalIndicesLandsat  = opticalIndicesLandsat;
-exports.opticalIndicesS2 = opticalIndicesS2;
-exports.radarIndicesS1 = radarIndicesS1;
+exports.calculateL7L8Indices = calculateL7L8Indices;
+exports.calculateL8ToaTasseledCapIndices = calculateL8ToaTasseledCapIndices;
+exports.calculateS2Indices = calculateS2Indices;
+exports.calculateS1Indices = calculateS1Indices;

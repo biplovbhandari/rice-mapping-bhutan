@@ -17,9 +17,22 @@ function maskL7L8(image) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+function applyScaleFactorsL7L8(image) {
+  // var opticalBands = image.select('SR_B.').multiply(0.0000275).add(-0.2);
+  // var thermalBands = image.select('ST_B.*').multiply(0.00341802).add(149.0);
+  // return image.addBands(opticalBands, null, true)
+  //             .addBands(thermalBands, null, true);
+  var opticalBands = image.select(['green', 'red', 'nir', 'swir1']).multiply(0.0000275).add(-0.2);
+  return image.addBands(opticalBands, null, true);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 function getL7L8ReducedImage(listofDates, LS8, LS7) {
-  LS8 = LS8.map(applyScaleFactors).map(maskL7L8);
-  LS7 = LS7.map(applyScaleFactors).map(maskL7L8);
+  LS8 = LS8.map(applyScaleFactorsL7L8).map(maskL7L8);
+  LS7 = LS7.map(applyScaleFactorsL7L8).map(maskL7L8);
   return listofDates.map(function (ld) {
     var icL8 = ee.ImageCollection(LS8.filterDate(ee.Dictionary(ld).get('startDate'), ee.Dictionary(ld).get('endDate')));
     var icL7 = ee.ImageCollection(LS7.filterDate(ee.Dictionary(ld).get('startDate'), ee.Dictionary(ld).get('endDate')));
@@ -33,19 +46,10 @@ function getL7L8ReducedImage(listofDates, LS8, LS7) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-function applyScaleFactors(image) {
-  // var opticalBands = image.select('SR_B.').multiply(0.0000275).add(-0.2);
-  // var thermalBands = image.select('ST_B.*').multiply(0.00341802).add(149.0);
-  // return image.addBands(opticalBands, null, true)
-  //             .addBands(thermalBands, null, true);
-  var opticalBands = image.select(['green', 'red', 'nir', 'swir1']).multiply(0.0000275).add(-0.2);
-  return image.addBands(opticalBands, null, true);
-}
+// needs fixing?
+function maskL8ToaClouds (image) {
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-var getQABits = function(image, start, end, newName) {
+  function getQABits (image, start, end, newName) {
     // Compute the bits we need to extract.
     var pattern = 0;
     for (var i = start; i <= end; i++) {
@@ -56,18 +60,12 @@ var getQABits = function(image, start, end, newName) {
     return image.select([0], [newName])
                   .bitwiseAnd(pattern)
                   .rightShift(start);
-};
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-function maskL8ToaClouds (image) {
+  }
 
   // A function to mask out cloudy pixels.
   function cloud_shadows (image) {
     // Select the QA band.
-    var QA = image.select(['BQA']);
+    var QA = image.select(['QA_PIXEL']);
     // Get the internal_cloud_algorithm_flag bit.
     return getQABits(QA, 7, 8, 'Cloud_shadows').eq(1);
     // Return an image masking out cloudy areas.
@@ -86,7 +84,23 @@ function maskL8ToaClouds (image) {
   var c = clouds(image);
   image = image.updateMask(cs);
   return image.updateMask(c);
-};
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function powerToDb(img){
+  return ee.Image(10).multiply(img.log10());
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function dbToPower(img){
+  return ee.Image(10).pow(img.divide(10));
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -94,5 +108,6 @@ function maskL8ToaClouds (image) {
 
 exports.getL7L8ReducedImage = getL7L8ReducedImage;
 exports.maskL7L8 = maskL7L8;
-exports.applyScaleFactors = applyScaleFactors;
 exports.maskL8ToaClouds = maskL8ToaClouds;
+exports.powerToDb = powerToDb;
+exports.dbToPower = dbToPower;
