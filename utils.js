@@ -1,11 +1,11 @@
 var indices = require('users/biplovbhandari/Rice_Mapping_Bhutan:indices.js');
-var tasseledCap_indices = require('users/biplovbhandari/Rice_Mapping_Bhutan:TCAP_Optical_Export.js');
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-function getIndices(listofDates, imageCollection, ROI, type) {
+function getIndices(listofDates, imageCollection, type) {
   
   if (type == 'landsat') {
     return listofDates.map(function (ld) {
@@ -20,7 +20,7 @@ function getIndices(listofDates, imageCollection, ROI, type) {
   } else if (type == 'tc') {
     return listofDates.map(function (ld) {
       var ic = ee.ImageCollection(imageCollection.filterDate(ee.Dictionary(ld).get('startDate'), ee.Dictionary(ld).get('endDate')));
-      return indices.calculateL8ToaTasseledCapIndices(ic, ROI);
+      return indices.calculateL8ToaTasseledCapIndices(ic);
     });
   } else if (type == 'sentinel1') {
     return listofDates.map(function (ld) {
@@ -33,6 +33,7 @@ function getIndices(listofDates, imageCollection, ROI, type) {
     });
   }
 }
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -58,12 +59,13 @@ function bulkRenameBands(bandNames, type, phase) {
 }
 
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-function timePeriodSelector (ImageCollection, list_m, list_y,ROI){
-  var Selected_Month_Year_IC =  list_y.map(function (y) {
-    var list_ic = list_m.map(function (m) {
+function timePeriodSelector (ImageCollection, monthsList, yearsList, ROI) {
+  var imageCollection = yearsList.map(function (y) {
+    var list_ic = monthsList.map(function (m) {
       var xic = ImageCollection.filterBounds(ROI).filter(
         ee.Filter.date(ee.Date.fromYMD(y, m, 1), ee.Date.fromYMD(y, m, 30))
       );
@@ -71,8 +73,9 @@ function timePeriodSelector (ImageCollection, list_m, list_y,ROI){
     });
     return ee.List(list_ic).flatten();
   });
-  return ee.List(Selected_Month_Year_IC).flatten();
+  return ee.List(imageCollection).flatten();
 }
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -84,6 +87,7 @@ function dateSplitter (ImageCollection, MonthRange1, MonthRange2, YearRange1, Ye
                    .filter(ee.Filter.calendarRange(YearRange1, YearRange2, 'year'))
   ).filterBounds(ROI);
 }
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -68,11 +68,11 @@ var s1Ascending = ee.ImageCollection('COPERNICUS/S1_GRD')
             .filter(ee.Filter.eq('instrumentMode', 'IW'));
 
 
-var list_month = [5, 6, 7, 8, 9];
-var list_year = [2020];
+var monthsList = [5, 6, 7, 8, 9];
+var yearsList = [2020];
 
 var l8FinalCollection =  ee.ImageCollection(
-  baseModule.utils.timePeriodSelector(LS8, list_month, list_year, ROI)
+  baseModule.utils.timePeriodSelector(LS8, monthsList, yearsList, ROI)
 ).sort('system:time_start');
 l8FinalCollection = l8FinalCollection.select(['SR_B.', 'QA_PIXEL']);
 
@@ -127,7 +127,7 @@ l8FinalCollection = l8FinalCollection.map(function (img) {
   return img.rename(['green', 'red', 'nir', 'swir1', 'QA_PIXEL']);
 });
 
-var l8Indices = ee.ImageCollection(baseModule.utils.getIndices(listofDates, l8FinalCollection, ROI, 'landsat'));
+var l8Indices = ee.ImageCollection(baseModule.utils.getIndices(listofDates, l8FinalCollection, 'landsat'));
 var l8IndicesImage = l8Indices.toBands();
 var l8IndicesNewBandNames = baseModule.utils.bulkRenameBands(l8IndicesImage.bandNames());
 l8IndicesImage = l8IndicesImage.rename(l8IndicesNewBandNames);
@@ -145,7 +145,7 @@ l8IndicesImage = l8IndicesImage.unmask(0);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var l7FinalCollection = ee.ImageCollection(
-  baseModule.utils.timePeriodSelector(LS7, list_month, list_year, ROI)
+  baseModule.utils.timePeriodSelector(LS7, monthsList, yearsList, ROI)
 ).sort('system:time_start');
 l7FinalCollection = l7FinalCollection.select(['SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'QA_PIXEL']);
 
@@ -166,7 +166,7 @@ l7FinalCollection = l7FinalCollection.map(function (img) {
 var _landsatCollection = baseModule.routine.getL7L8ReducedImage(listofDates, l8FinalCollection, l7FinalCollection);
 var landsatCollection = ee.ImageCollection(_landsatCollection);
 
-var landsatIndices = ee.ImageCollection(baseModule.utils.getIndices(listofDates, landsatCollection, ROI, 'combinedLandsat'));
+var landsatIndices = ee.ImageCollection(baseModule.utils.getIndices(listofDates, landsatCollection, 'combinedLandsat'));
 landsatIndices = landsatIndices.toBands();
 var landsatIndicesNewBandNames = baseModule.utils.bulkRenameBands(landsatIndices.bandNames());
 var landsatIndicesImage = landsatIndices.rename(landsatIndicesNewBandNames);
@@ -184,9 +184,9 @@ landsatIndicesImage = landsatIndicesImage.unmask(0);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var s2FinalCollection =  ee.ImageCollection(
-  baseModule.utils.timePeriodSelector(S2, list_month, list_year, ROI)
+  baseModule.utils.timePeriodSelector(S2, monthsList, yearsList, ROI)
 ).sort('system:time_start');
-var s2Indices = ee.ImageCollection(baseModule.utils.getIndices(listofDates, s2FinalCollection, ROI, 'sentinel2'));
+var s2Indices = ee.ImageCollection(baseModule.utils.getIndices(listofDates, s2FinalCollection, 'sentinel2'));
 s2Indices = s2Indices.toBands();
 var s2IndicesNewBandNames = baseModule.utils.bulkRenameBands(s2Indices.bandNames(), 'sentinel2');
 var s2IndicesImage = s2Indices.rename(s2IndicesNewBandNames);
@@ -204,7 +204,7 @@ s2IndicesImage = s2IndicesImage.unmask(0);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var l8ToaFinalCollection =  ee.ImageCollection(
-  baseModule.utils.timePeriodSelector(LS8_TOA, list_month, list_year, ROI)
+  baseModule.utils.timePeriodSelector(LS8_TOA, monthsList, yearsList, ROI)
 ).sort('system:time_start');
 l8ToaFinalCollection = l8ToaFinalCollection.select(['B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'QA_PIXEL']);
 
@@ -212,7 +212,7 @@ l8ToaFinalCollection = l8ToaFinalCollection.map(function (img) {
   return img.rename(['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'QA_PIXEL']);
 });
 
-var l8ToaTcIndices = ee.ImageCollection(baseModule.utils.getIndices(listofDates, l8ToaFinalCollection, ROI, 'tc'));
+var l8ToaTcIndices = ee.ImageCollection(baseModule.utils.getIndices(listofDates, l8ToaFinalCollection, 'tc'));
 l8ToaTcIndices = l8ToaTcIndices.toBands();
 var l8ToaTcIndicesNewBandNames = baseModule.utils.bulkRenameBands(l8ToaTcIndices.bandNames());
 var l8ToaTcIndicesImage = l8ToaTcIndices.rename(l8ToaTcIndicesNewBandNames);
@@ -235,9 +235,11 @@ l8ToaTcIndicesImage = l8ToaTcIndicesImage.unmask(0);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var s1DescendingFinal = ee.ImageCollection(
-  baseModule.utils.timePeriodSelector(s1Descending, list_month, list_year, ROI)
+  baseModule.utils.timePeriodSelector(s1Descending, monthsList, yearsList, ROI)
 ).sort('system:time_start');
-s1DescendingFinal = ee.ImageCollection(baseModule.utils.getIndices(listofDates, s1DescendingFinal, ROI, 'sentinel1'));
+
+s1DescendingFinal = baseModule.s1_correction.leeCorrection(s1DescendingFinal);
+s1DescendingFinal = ee.ImageCollection(baseModule.utils.getIndices(listofDates, s1DescendingFinal, 'sentinel1'));
 
 var s1DescendingFinalImage = s1DescendingFinal.toBands();
 var s1DescendingFinalNewBandNames = baseModule.utils.bulkRenameBands(s1DescendingFinalImage.bandNames(), 'sentinel1', 'descend');
@@ -250,9 +252,11 @@ s1DescendingFinalImage = s1DescendingFinalImage.clip(ROI);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var s1AscendingFinal = ee.ImageCollection(
-  baseModule.utils.timePeriodSelector(s1Ascending, list_month, list_year, ROI)
+  baseModule.utils.timePeriodSelector(s1Ascending, monthsList, yearsList, ROI)
 ).sort('system:time_start');
-s1AscendingFinal = ee.ImageCollection(baseModule.utils.getIndices(listofDates, s1AscendingFinal, ROI, 'sentinel1'));
+
+s1AscendingFinal = baseModule.s1_correction.leeCorrection(s1AscendingFinal);
+s1AscendingFinal = ee.ImageCollection(baseModule.utils.getIndices(listofDates, s1AscendingFinal, 'sentinel1'));
 
 var s1AscendingFinalImage = s1AscendingFinal.toBands();
 var s1AscendinggFinalNewBandNames = baseModule.utils.bulkRenameBands(s1AscendingFinalImage.bandNames(), 'sentinel1', 'ascend');
@@ -276,7 +280,6 @@ var s1FinalImage = s1DescendingFinalImage.addBands(s1AscendingFinalImage);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// var finalImagery = l8ToaTcIndicesImage.addBands([s1FinalImage]);
 // var finalImagery = landsatIndicesImage;
 var finalImagery = landsatIndicesImage.addBands([s2IndicesImage, l8ToaTcIndicesImage, s1DescendingFinalImage]);
 finalImagery = finalImagery.float();

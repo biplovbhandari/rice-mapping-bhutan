@@ -7,29 +7,29 @@ var routine = require("users/biplovbhandari/Rice_Mapping_Bhutan:routine.js");
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // not recommended
-function _calculateL7L8Indices (imageCollection, ROI) {
+function _calculateL7L8Indices (imageCollection) {
   
   return imageCollection.map(function (image) {
   
     var NDVI = image.normalizedDifference(['nir', 'red']).rename('NDVI');
-    NDVI = ee.Image(NDVI.copyProperties(image)).set('system:time_start', image.get('system:time_start')).clip(ROI);
+    NDVI = ee.Image(NDVI.copyProperties(image)).set('system:time_start', image.get('system:time_start'));
     
     var NDWI = image.normalizedDifference(['green', 'nir']).rename('NDWI');
-    NDWI = ee.Image(NDWI.copyProperties(image)).set('system:time_start', image.get('system:time_start')).clip(ROI);
+    NDWI = ee.Image(NDWI.copyProperties(image)).set('system:time_start', image.get('system:time_start'));
   
     var MNDWI = image.normalizedDifference(["green","swir1"]).rename('MNDWI');
-    MNDWI = ee.Image(MNDWI.copyProperties(image)).set('system:time_start', image.get('system:time_start')).clip(ROI);
+    MNDWI = ee.Image(MNDWI.copyProperties(image)).set('system:time_start', image.get('system:time_start'));
     
     var SAVI = image.expression('((NIR - RED) / (NIR + RED + 0.5))*(1.5)', {
                                     'NIR': image.select('nir'),
                                     'RED': image.select('red')}).rename("SAVI");
-    SAVI = ee.Image(SAVI.copyProperties(image)).set('system:time_start', image.get('system:time_start')).clip(ROI);
+    SAVI = ee.Image(SAVI.copyProperties(image)).set('system:time_start', image.get('system:time_start'));
           
     var NDMI = image.normalizedDifference(["nir","swir1"]).rename('NDMI');
-    NDMI =  ee.Image(NDMI.copyProperties(image)).set('system:time_start', image.get('system:time_start')).clip(ROI);
+    NDMI =  ee.Image(NDMI.copyProperties(image)).set('system:time_start', image.get('system:time_start'));
       
     var NDBI = image.normalizedDifference(["swir1","nir"]).rename('NDBI');
-    NDBI = ee.Image(NDBI.copyProperties(image)).set('system:time_start', image.get('system:time_start')).clip(ROI);
+    NDBI = ee.Image(NDBI.copyProperties(image)).set('system:time_start', image.get('system:time_start'));
 
     return NDVI.addBands([NDWI, MNDWI, NDMI, NDBI]);
   });
@@ -107,7 +107,7 @@ function calculateL8ToaTasseledCapIndices(imageCollection) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // not recommended
-function _calculateS2Indices(ImageCollection, ROI){
+function _calculateS2Indices(ImageCollection) {
 
   function maskS2clouds(image) {
     var qa = image.select('QA60');
@@ -125,34 +125,34 @@ function _calculateS2Indices(ImageCollection, ROI){
 
   var S2_NDVI = ImageCollection.map(maskS2clouds).map(function(image) { 
     var conv =  image.normalizedDifference(['B8', 'B4']).rename('S2_NDVI');
-    return  ee.Image(conv.copyProperties(image)).set('system:time_start', image.get('system:time_start')).clip(ROI);//.mosaic()
+    return  ee.Image(conv.copyProperties(image)).set('system:time_start', image.get('system:time_start'));
   }).median();
   
   var S2_NDWI = ImageCollection.map(maskS2clouds).map(function(image) { 
     var conv =  image.normalizedDifference(['B3', 'B8']).rename('S2_NDWI');
-    return  ee.Image(conv.copyProperties(image)).set('system:time_start', image.get('system:time_start')).clip(ROI);
+    return  ee.Image(conv.copyProperties(image)).set('system:time_start', image.get('system:time_start'));
   }).median();
 
   var S2_MNDWI = ImageCollection.map(maskS2clouds).map(function(image) { 
     var conv =  image.normalizedDifference(['B3', 'B11']).rename('S2_MNDWI');
-    return  ee.Image(conv.copyProperties(image)).set('system:time_start', image.get('system:time_start')).clip(ROI);
+    return  ee.Image(conv.copyProperties(image)).set('system:time_start', image.get('system:time_start'));
   }).median();
   
   var S2_SAVI = ImageCollection.map(maskS2clouds).map(function(image) { 
     var conv =  image.expression('((NIR - RED) / (NIR + RED + 0.5))*(1.5)', {
                                   'NIR': image.select('B8'),
                                   'RED': image.select('B4')}).rename("S2_SAVI");
-    return  ee.Image(conv.copyProperties(image)).set('system:time_start', image.get('system:time_start')).clip(ROI);
+    return  ee.Image(conv.copyProperties(image)).set('system:time_start', image.get('system:time_start'));
   }).median();
         
   var S2_NDMI = ImageCollection.map(maskS2clouds).map(function(image) { 
     var conv =  image.normalizedDifference(['B8', 'B11']).rename('S2_NDMI');
-    return  ee.Image(conv.copyProperties(image)).set('system:time_start', image.get('system:time_start')).clip(ROI);
+    return  ee.Image(conv.copyProperties(image)).set('system:time_start', image.get('system:time_start'));
   }).median();
     
   var S2_NDBI  = ImageCollection.map(maskS2clouds).map(function(image) { 
     var conv =  image.normalizedDifference(['B11', 'B8']).rename('S2_NDBI');
-    return  ee.Image(conv.copyProperties(image)).set('system:time_start', image.get('system:time_start')).clip(ROI);
+    return  ee.Image(conv.copyProperties(image)).set('system:time_start', image.get('system:time_start'));
   }).median();
   
   return S2_NDVI.addBands([S2_NDWI, S2_MNDWI, S2_SAVI, S2_NDMI, S2_NDBI]);
@@ -205,7 +205,7 @@ function calculateS2Indices(ImageCollection){
 
 // mosaic unknown area
 // not recommended
-function _calculateS1Indices (ImageCollection, ROI) {
+function _calculateS1Indices (ImageCollection) {
 
   var vvMosaic = ImageCollection.select('VV').mosaic();
   var VV = ImageCollection.select('VV').median().unmask(vvMosaic);
