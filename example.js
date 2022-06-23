@@ -240,7 +240,7 @@ var s1DescendingFinal = ee.ImageCollection(
 
 
 s1DescendingFinal = baseModule.s1_correction.terrainCorrection(s1DescendingFinal);
-s1DescendingFinal = baseModule.s1_correction.refinedLee(s1DescendingFinal);
+// s1DescendingFinal = baseModule.s1_correction.refinedLee(s1DescendingFinal);
 
 s1DescendingFinal = ee.ImageCollection(baseModule.utils.getIndices(listofDates, s1DescendingFinal, 'sentinel1'));
 
@@ -258,8 +258,9 @@ var s1AscendingFinal = ee.ImageCollection(
   baseModule.utils.timePeriodSelector(s1Ascending, monthsList, yearsList, ROI)
 ).sort('system:time_start');
 
-s1AscendingFinal = baseModule.s1_correction.terrainCorrection(s1AscendingFinal);
+// s1AscendingFinal = baseModule.s1_correction.terrainCorrection(s1AscendingFinal);
 s1AscendingFinal = baseModule.s1_correction.refinedLee(s1AscendingFinal);
+
 s1AscendingFinal = ee.ImageCollection(baseModule.utils.getIndices(listofDates, s1AscendingFinal, 'sentinel1'));
 
 var s1AscendingFinalImage = s1AscendingFinal.toBands();
@@ -284,7 +285,26 @@ var s1FinalImage = s1DescendingFinalImage.addBands(s1AscendingFinalImage);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var finalImagery = landsatIndicesImage.addBands([s2IndicesImage, l8ToaTcIndicesImage, s1FinalImage]);
+/*
+Here's the test from the including both terrain correction and filtering with both   pass
+
+both ascending and descending
+a. both terrain correction and lee filtering --> User memory limit exceeded.
+b. only terrain correction --> does not work (few training points)
+c. only refined lee --> User memory limit exceeded.
+
+descending only
+a. both terrain correction and lee filtering --> User memory limit exceeded.
+b. only terrain correction --> works fine
+c. only refined lee --> User memory limit exceeded.
+
+ascending only
+a. both terrain correction and lee filtering --> Classifier training failed: 'Invalid minimum size of leaf nodes: 1' (masking issue).
+b. only terrain correction --> Classifier training failed: 'Invalid minimum size of leaf nodes: 1' (masking issue).
+c. only refined lee --> Classifier training failed: 'Only one class.'.(masking issue).
+*/
+
+var finalImagery = landsatIndicesImage.addBands([s2IndicesImage, l8ToaTcIndicesImage, s1DescendingFinalImage]);
 finalImagery = finalImagery.float();
 var bands = finalImagery.bandNames();
 
@@ -313,7 +333,7 @@ var training_sample = finalImagery.select(bands).sampleRegions({
   scale: 30,
   // geometries: true,
 }).randomColumn({seed: 7});
-print('training_sample', training_sample);
+print('training_sample length', training_sample);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

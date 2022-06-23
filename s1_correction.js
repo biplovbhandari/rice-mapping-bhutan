@@ -90,6 +90,8 @@ function terrainCorrection (imageCollection) {
 // The RL speckle filter
 function _refinedLee(image) {
   
+  var startTime = image.get('system:time_start');
+  
   var bandNames = image.bandNames();
   image = routine.dbToPower(image);
   
@@ -192,7 +194,7 @@ function _refinedLee(image) {
       .arrayFlatten([['sum']])
       .float();
   })).toBands().rename(bandNames);
-  return routine.powerToDb(ee.Image(result));
+  return routine.powerToDb(result).set('system:time_start', startTime);
 }
 
 
@@ -404,8 +406,8 @@ function refinedLeeCorrection (terrainCorrection_IC) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // exports.terrainCorrection = terrainCorrection
-exports.leeCorrection = leeCorrection;
-exports.refinedLeeCorrection = refinedLeeCorrection;
+// exports.leeCorrection = leeCorrection;
+// exports.refinedLeeCorrection = refinedLeeCorrection;
 exports.terrainCorrection = terrainCorrection;
 exports.refinedLee = refinedLee;
 
