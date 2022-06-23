@@ -238,7 +238,10 @@ var s1DescendingFinal = ee.ImageCollection(
   baseModule.utils.timePeriodSelector(s1Descending, monthsList, yearsList, ROI)
 ).sort('system:time_start');
 
-s1DescendingFinal = baseModule.s1_correction.leeCorrection(s1DescendingFinal);
+
+s1DescendingFinal = baseModule.s1_correction.terrainCorrection(s1DescendingFinal);
+s1DescendingFinal = baseModule.s1_correction.refinedLee(s1DescendingFinal);
+
 s1DescendingFinal = ee.ImageCollection(baseModule.utils.getIndices(listofDates, s1DescendingFinal, 'sentinel1'));
 
 var s1DescendingFinalImage = s1DescendingFinal.toBands();
@@ -255,7 +258,8 @@ var s1AscendingFinal = ee.ImageCollection(
   baseModule.utils.timePeriodSelector(s1Ascending, monthsList, yearsList, ROI)
 ).sort('system:time_start');
 
-s1AscendingFinal = baseModule.s1_correction.leeCorrection(s1AscendingFinal);
+s1AscendingFinal = baseModule.s1_correction.terrainCorrection(s1AscendingFinal);
+s1AscendingFinal = baseModule.s1_correction.refinedLee(s1AscendingFinal);
 s1AscendingFinal = ee.ImageCollection(baseModule.utils.getIndices(listofDates, s1AscendingFinal, 'sentinel1'));
 
 var s1AscendingFinalImage = s1AscendingFinal.toBands();
@@ -280,8 +284,7 @@ var s1FinalImage = s1DescendingFinalImage.addBands(s1AscendingFinalImage);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// var finalImagery = landsatIndicesImage;
-var finalImagery = landsatIndicesImage.addBands([s2IndicesImage, l8ToaTcIndicesImage, s1DescendingFinalImage]);
+var finalImagery = landsatIndicesImage.addBands([s2IndicesImage, l8ToaTcIndicesImage, s1FinalImage]);
 finalImagery = finalImagery.float();
 var bands = finalImagery.bandNames();
 
