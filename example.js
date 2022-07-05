@@ -89,28 +89,48 @@ var l8FinalCollection2 = l8FinalCollection.sort('system:time_start', false);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var firstDate = ee.Date(l8FinalCollection.first().get('system:time_start'));
-var lastDate = ee.Date(l8FinalCollection2.first().get('system:time_start'));
 
-var listofDates = [];
+var useExactDate = false;
 
+if (useExactDate) {
+  
+  var firstDate = ee.Date(l8FinalCollection.first().get('system:time_start'));
+  var lastDate = ee.Date(l8FinalCollection2.first().get('system:time_start'));
 
-var numDays = lastDate.difference(firstDate, 'day').int().getInfo();
+  var listofDates = [];
 
-var diff = 0;
-var daysDiff = 15;
-while (diff <= numDays) {
-  var dict = {
-    'startDate': firstDate.advance(diff, 'day'),
-    'endDate'  : firstDate.advance(diff + daysDiff, 'day')
-  };
-  listofDates.push(dict);
-  diff += daysDiff;
+  var numDays = lastDate.difference(firstDate, 'day').int().getInfo();
+  
+  var diff = 0;
+  var daysDiff = 15;
+  while (diff <= numDays) {
+    var dict = {
+      'startDate': firstDate.advance(diff, 'day'),
+      'endDate'  : firstDate.advance(diff + daysDiff, 'day')
+    };
+    listofDates.push(dict);
+    diff += daysDiff;
+  }
+  
+  listofDates = ee.List(listofDates);
+} else {
+  
+  var listofDates = [];
+  
+  // year is hardcoded for now
+  for (var i = 0; i<monthsList.length; i++) {
+    var startDate = ee.Date.fromYMD(2020, monthsList[i], 1);
+    var dict = {
+      'startDate': startDate,
+      'endDate'  : startDate.advance(1, 'month').advance(-1, 'day')
+    };
+    listofDates.push(dict);
+    diff += daysDiff;
+  }
+  listofDates = ee.List(listofDates);
 }
 
-listofDates = ee.List(listofDates);
 print('listofDates', listofDates);
-
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -240,6 +260,17 @@ var s1DescendingFinal = ee.ImageCollection(
 
 
 s1DescendingFinal = baseModule.s1_correction.terrainCorrection(s1DescendingFinal);
+
+// export terrain corrected images
+// print('s1DescendingFinal', s1DescendingFinal);
+// var sizeImage = s1DescendingFinal.size().getInfo();
+
+// var listImages = s1DescendingFinal.toList(sizeImage);
+// for (var i = 0; i<sizeImage; ++i) {
+//   var img = listImages.get(i);
+//   Export.image.toAsset(img, 'sentinel1');
+// }
+
 // s1DescendingFinal = baseModule.s1_correction.refinedLee(s1DescendingFinal);
 
 s1DescendingFinal = ee.ImageCollection(baseModule.utils.getIndices(listofDates, s1DescendingFinal, 'sentinel1'));
@@ -258,8 +289,8 @@ var s1AscendingFinal = ee.ImageCollection(
   baseModule.utils.timePeriodSelector(s1Ascending, monthsList, yearsList, ROI)
 ).sort('system:time_start');
 
-// s1AscendingFinal = baseModule.s1_correction.terrainCorrection(s1AscendingFinal);
-s1AscendingFinal = baseModule.s1_correction.refinedLee(s1AscendingFinal);
+s1AscendingFinal = baseModule.s1_correction.terrainCorrection(s1AscendingFinal);
+// s1AscendingFinal = baseModule.s1_correction.refinedLee(s1AscendingFinal);
 
 s1AscendingFinal = ee.ImageCollection(baseModule.utils.getIndices(listofDates, s1AscendingFinal, 'sentinel1'));
 
