@@ -48,8 +48,7 @@ var s1Ascending = ee.ImageCollection('COPERNICUS/S1_GRD')
 // if multiple month/year is added; baseModule.utils.timePeriodSelector will give you all
 var monthsList = [5];    // <--- INPUT NEEDED: MONTH NUMBER
 var yearsList = [2020];
-var dateFormat = '2020-05-01'; // <--- INPUT NEEDED: date format
-
+var dateFormat = '2020-0' + monthsList[0] + '-01';
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
