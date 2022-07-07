@@ -125,7 +125,6 @@ if (useExactDate) {
       'endDate'  : startDate.advance(1, 'month').advance(-1, 'day')
     };
     listofDates.push(dict);
-    diff += daysDiff;
   }
   listofDates = ee.List(listofDates);
 }
